@@ -70,15 +70,19 @@ function ReceiptModal({ record, onClose }: { record: FinanceRecord, onClose: () 
 
             const node = receiptRef.current;
             const imgData = await htmlToImage.toPng(node, {
-                pixelRatio: 2, // 2x is usually enough for A5 and prevents memory issues on mobile
+                pixelRatio: 3, // Higher quality (3x) for professional crispness
                 backgroundColor: "#ffffff",
                 quality: 1.0,
-                width: 740,   // Explicitly set capture width to match receipt
-                height: 520,  // Explicitly set capture height to match receipt
+                width: 740,   // Force capture width
+                height: 520,  // Force capture height
                 style: {
-                    transform: 'scale(1)', // Ensure no scaling is applied during capture
+                    transform: 'scale(1)', // Reset preview scaling for the capture
+                    transformOrigin: 'top left',
                     margin: '0',
-                    padding: '0'
+                    padding: '0',
+                    width: '740px',
+                    height: '520px',
+                    position: 'relative'
                 }
             });
 
@@ -527,7 +531,7 @@ export default function FinancePage() {
 
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                 <div className="p-4 border-b border-slate-100 bg-slate-50/50">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
                         <div className="lg:col-span-2 relative">
                             <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
                             <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full pl-9 pr-4 py-1.5 bg-white border border-slate-200 rounded-md text-sm outline-none focus:border-blue-500 shadow-sm" placeholder="Search by description or donor..." />
