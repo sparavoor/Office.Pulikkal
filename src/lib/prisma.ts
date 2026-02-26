@@ -17,6 +17,11 @@ declare global {
 // This prevents build-time crashes when DATABASE_URL is not available.
 const prismaProxy = new Proxy({} as PrismaClient, {
     get: (target, prop) => {
+        // Prevent Vercel's build-time inspection from triggering initialization
+        if (typeof prop === 'symbol' || prop === 'toJSON' || prop === '$$typeof') {
+            return undefined;
+        }
+
         if (prop === 'constructor') return PrismaClient;
 
         if (!globalThis.prisma) {
