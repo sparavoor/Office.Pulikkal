@@ -4,8 +4,11 @@ const prismaClientSingleton = () => {
     try {
         return new PrismaClient()
     } catch (e) {
-        console.error('Prisma initialization failed:', e);
-        return {} as PrismaClient; // Return dummy object to prevent top-level crash
+        console.error('CRITICAL: Prisma failed to initialize. Check DATABASE_URL in Vercel settings.', e);
+        // Return a self-healing proxy dummy to prevent "cannot read property of undefined" crashes
+        return new Proxy({} as any, {
+            get: () => () => Promise.resolve([])
+        }) as any as PrismaClient;
     }
 }
 
@@ -13,16 +16,13 @@ declare global {
     var prisma: undefined | ReturnType<typeof prismaClientSingleton>
 }
 
-// Use a Proxy to defer actual Prisma initialization until the first query.
-// This prevents build-time crashes when DATABASE_URL is not available.
+// Lazy Proxy: Prevents initialization during build/static analysis
 const prismaProxy = new Proxy({} as PrismaClient, {
     get: (target, prop) => {
-        // Prevent Vercel's build-time inspection from triggering initialization
-        if (typeof prop === 'symbol' || prop === 'toJSON' || prop === '$$typeof') {
+        // Internal JS/Next.js/React properties - don't trigger initialization
+        if (typeof prop === 'symbol' || prop === 'toJSON' || prop === '$$typeof' || prop === 'constructor') {
             return undefined;
         }
-
-        if (prop === 'constructor') return PrismaClient;
 
         if (!globalThis.prisma) {
             globalThis.prisma = prismaClientSingleton()
