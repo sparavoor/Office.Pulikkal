@@ -65,24 +65,17 @@ function ReceiptModal({ record, onClose }: { record: FinanceRecord, onClose: () 
         try {
             await new Promise(resolve => setTimeout(resolve, 100));
 
-            const html2canvasModule = await import('html2canvas');
-            const html2canvas = html2canvasModule.default || html2canvasModule;
+            const htmlToImage = await import('html-to-image');
             const { jsPDF } = await import('jspdf');
 
-            const canvas = await html2canvas(receiptRef.current, {
-                scale: 2,
-                useCORS: true,
+            const node = receiptRef.current;
+            const imgData = await htmlToImage.toPng(node, {
+                pixelRatio: 3,
                 backgroundColor: "#ffffff",
-                logging: false,
-                onclone: (clonedDoc) => {
-                    const seal = clonedDoc.querySelector('.receipt-seal-container');
-                    if (seal) {
-                        (seal as HTMLElement).style.opacity = '0.5';
-                    }
-                }
+                quality: 1.0,
+                // Make sure the seal looks a bit faded if needed, or leave to CSS
             });
 
-            const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF({
                 orientation: 'landscape',
                 unit: 'mm',
@@ -90,7 +83,7 @@ function ReceiptModal({ record, onClose }: { record: FinanceRecord, onClose: () 
             });
 
             const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            const pdfHeight = (node.offsetHeight * pdfWidth) / node.offsetWidth;
 
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
             pdf.save(`Receipt_${record.id.slice(0, 8).toUpperCase()}.pdf`);
