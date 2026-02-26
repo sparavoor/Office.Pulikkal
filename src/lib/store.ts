@@ -107,7 +107,12 @@ export const useAppStore = create<AppState>((set, get) => ({
             const attendanceRecords = await attendanceRes.json();
             const financeRecords = await financeRes.json();
 
-            set({ members, meetings, attendanceRecords, financeRecords });
+            set({
+                members: Array.isArray(members) ? members : [],
+                meetings: Array.isArray(meetings) ? meetings : [],
+                attendanceRecords: Array.isArray(attendanceRecords) ? attendanceRecords : [],
+                financeRecords: Array.isArray(financeRecords) ? financeRecords : []
+            });
         } catch (error) {
             console.error('Failed to fetch initial data:', error);
         } finally {
