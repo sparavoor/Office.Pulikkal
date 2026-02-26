@@ -1,0 +1,56 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Member {
+  id            String             @id @default(uuid())
+  name          String
+  mobile        String
+  designation   String
+  committeeType String // 'Secretariat' | 'Executive'
+  createdAt     DateTime           @default(now())
+  attendance    AttendanceRecord[] // Relation to attendance records
+}
+
+model Meeting {
+  id          String             @id @default(uuid())
+  title       String
+  meetingType String // 'Secretariat' | 'Executive'
+  date        String // Stored as ISO string or YYYY-MM-DD
+  time        String // Stored as HH:MM format
+  location    String
+  description String
+  createdAt   DateTime           @default(now())
+  attendance  AttendanceRecord[] // Relation to attendance records
+}
+
+model AttendanceRecord {
+  id        String   @id @default(uuid())
+  meetingId String
+  memberId  String
+  status    String // 'Present' | 'Absent' | 'Late'
+  markedAt  DateTime @default(now())
+
+  // Relations
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  member  Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  // A member can only have one attendance record per meeting
+  @@unique([meetingId, memberId])
+}
+
+model FinanceRecord {
+  id          String   @id @default(uuid())
+  type        String // 'Cash In' | 'Cash Out'
+  amount      Float
+  category    String
+  donorName   String? // Optional
+  description String
+  date        String // Stored as YYYY-MM-DD
+  paymentMode String // 'Cash' | 'Bank Transfer' | 'UPI' | 'Cheque' | 'Other'
+  createdAt   DateTime @default(now())
+}
