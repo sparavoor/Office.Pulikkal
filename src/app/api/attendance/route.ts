@@ -4,6 +4,10 @@ import prisma from '@/lib/prisma';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+    // Safety check for Vercel build time
+    if (!process.env.DATABASE_URL) {
+        return NextResponse.json([]);
+    }
     try {
         const records = await prisma.attendanceRecord.findMany();
         return NextResponse.json(records);
