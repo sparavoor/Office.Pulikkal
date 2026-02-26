@@ -65,17 +65,43 @@ function ReceiptModal({ record, onClose }: { record: FinanceRecord, onClose: () 
         if (!receiptRef.current) return;
         setDownloading(true);
         try {
-            const canvas = await html2canvas(receiptRef.current, { scale: 2 });
-            const imgData = canvas.toDataURL('image/png');
-            let pdf = new jsPDF('l', 'mm', 'a5');
+            // Give a tiny moment for layout to settle if needed
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            const canvas = await html2canvas(receiptRef.current, {
+                scale: 3, // Higher scale for better quality
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: "#ffffff",
+                logging: false,
+                imageTimeout: 15000, // Long timeout for images
+                onclone: (clonedDoc) => {
+                    // Optional: You can modify the cloned DOM before capture if needed
+                    const seal = clonedDoc.querySelector('.receipt-seal-container');
+                    if (seal) {
+                        (seal as HTMLElement).style.mixBlendMode = 'normal';
+                        (seal as HTMLElement).style.opacity = '0.7';
+                    }
+                }
+            });
+
+            const imgData = canvas.toDataURL('image/png', 1.0);
+            const pdf = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: 'a5',
+                compress: true
+            });
+
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save(`Receipt_${record.id.slice(0, 6)}.pdf`);
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+            pdf.save(`Receipt_${record.id.slice(0, 8).toUpperCase()}.pdf`);
             toast.success("Receipt downloaded!");
         } catch (error) {
-            toast.error("Failed to generate receipt");
+            console.error("PDF Generation Error:", error);
+            toast.error("Failed to generate receipt PDF");
         }
         setDownloading(false);
     };
@@ -148,8 +174,8 @@ function ReceiptModal({ record, onClose }: { record: FinanceRecord, onClose: () 
                             </div>
 
                             {/* Official Seal Stamped */}
-                            <div className="absolute left-1/2 bottom-0 transform -translate-x-1/2 opacity-80 mix-blend-multiply pointer-events-none">
-                                <img src="/seal.png" alt="Official Seal" className="w-24 h-24 object-contain grayscale-[20%]" />
+                            <div className="absolute left-1/2 bottom-0 transform -translate-x-1/2 opacity-70 pointer-events-none receipt-seal-container">
+                                <img src="/seal.png" alt="Official Seal" className="w-24 h-24 object-contain" />
                             </div>
 
                             <div className="text-right w-1/3 relative z-10 bg-white/50 backdrop-blur-[2px] rounded p-1">
