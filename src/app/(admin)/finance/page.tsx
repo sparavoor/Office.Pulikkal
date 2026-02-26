@@ -65,43 +65,35 @@ function ReceiptModal({ record, onClose }: { record: FinanceRecord, onClose: () 
         if (!receiptRef.current) return;
         setDownloading(true);
         try {
-            // Give a tiny moment for layout to settle if needed
             await new Promise(resolve => setTimeout(resolve, 100));
 
             const canvas = await html2canvas(receiptRef.current, {
-                scale: 3, // Higher scale for better quality
+                scale: 2, // Standard scale to prevent layout breaking or memory limits
                 useCORS: true,
-                allowTaint: true,
                 backgroundColor: "#ffffff",
                 logging: false,
-                imageTimeout: 15000, // Long timeout for images
                 onclone: (clonedDoc) => {
-                    // Optional: You can modify the cloned DOM before capture if needed
                     const seal = clonedDoc.querySelector('.receipt-seal-container');
                     if (seal) {
-                        (seal as HTMLElement).style.mixBlendMode = 'normal';
-                        (seal as HTMLElement).style.opacity = '0.7';
+                        (seal as HTMLElement).style.opacity = '0.5';
                     }
                 }
             });
 
-            const imgData = canvas.toDataURL('image/png', 1.0);
-            const pdf = new jsPDF({
-                orientation: 'landscape',
-                unit: 'mm',
-                format: 'a5',
-                compress: true
-            });
+            const imgData = canvas.toDataURL('image/png');
+            // Basic jsPDF constructor that works reliably across versions
+            const pdf = new jsPDF('l', 'mm', 'a5');
 
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
             pdf.save(`Receipt_${record.id.slice(0, 8).toUpperCase()}.pdf`);
             toast.success("Receipt downloaded!");
         } catch (error) {
             console.error("PDF Generation Error:", error);
-            toast.error("Failed to generate receipt PDF");
+            const msg = error instanceof Error ? error.message : "Unknown error";
+            toast.error(`Failed to generate PDF: ${msg}`);
         }
         setDownloading(false);
     };
