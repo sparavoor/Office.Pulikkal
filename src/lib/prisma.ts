@@ -1,15 +1,25 @@
 import { PrismaClient } from '@prisma/client'
+import { PrismaLibSql } from '@prisma/adapter-libsql'
 
 const prismaClientSingleton = () => {
+    const url = process.env.TURSO_DATABASE_URL;
+    const authToken = process.env.TURSO_AUTH_TOKEN;
+
+    if (!url || !authToken) {
+        console.error('CRITICAL: Turso credentials missing. Falling back to dummy client.');
+        return new Proxy({} as any, {
+            get: () => () => Promise.resolve([])
+        }) as any as PrismaClient;
+    }
+
     try {
-        // Fallback for Vercel deployments where DATABASE_URL might not be set in dashboard
-        if (!process.env.DATABASE_URL) {
-            process.env.DATABASE_URL = "postgresql://neondb_owner:npg_7AkCxb9mHnBy@ep-proud-surf-a1zuw8fu-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
-        }
-        return new PrismaClient()
+        const adapter = new PrismaLibSql({
+            url: url,
+            authToken: authToken,
+        })
+        return new PrismaClient({ adapter })
     } catch (e) {
-        console.error('CRITICAL: Prisma failed to initialize. Check DATABASE_URL in Vercel settings.', e);
-        // Return a self-healing proxy dummy to prevent "cannot read property of undefined" crashes
+        console.error('CRITICAL: Prisma failed to initialize with Turso.', e);
         return new Proxy({} as any, {
             get: () => () => Promise.resolve([])
         }) as any as PrismaClient;
