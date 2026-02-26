@@ -4,7 +4,7 @@ const prismaClientSingleton = () => {
     try {
         // Fallback for Vercel deployments where DATABASE_URL might not be set in dashboard
         if (!process.env.DATABASE_URL) {
-            process.env.DATABASE_URL = "postgresql://neondb_owner:npg_7AkCxb9mHnBy@ep-proud-surf-a1zuw8fu-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require";
+            process.env.DATABASE_URL = "postgresql://neondb_owner:npg_7AkCxb9mHnBy@ep-proud-surf-a1zuw8fu-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
         }
         return new PrismaClient()
     } catch (e) {
