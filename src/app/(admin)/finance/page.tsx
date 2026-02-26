@@ -110,8 +110,13 @@ function ReceiptModal({ record, onClose }: { record: FinanceRecord, onClose: () 
                         <div className="absolute top-0 left-0 right-0 h-2 bg-emerald-600"></div>
 
                         <div className="text-center mb-3 pt-1">
-                            <h1 className="text-2xl font-black text-emerald-800 tracking-tight uppercase">
-                                {receiptTemplate.orgName}
+                            <h1 className="text-2xl font-black text-emerald-800 tracking-tight uppercase flex justify-center items-center gap-1.5">
+                                {receiptTemplate.orgName.split('SSF').map((part, i, arr) => (
+                                    <span key={i}>
+                                        {part}
+                                        {i < arr.length - 1 && <span className="font-cooper font-normal normal-case text-3xl pb-1">SSF</span>}
+                                    </span>
+                                ))}
                             </h1>
                             <p className="text-sm font-medium text-slate-600 mt-1">{receiptTemplate.orgAddress}</p>
                             <p className="text-xs text-slate-500 mt-0.5">{receiptTemplate.orgContact}</p>

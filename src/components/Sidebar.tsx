@@ -23,7 +23,7 @@ export function Sidebar({ onCloseMobile }: { onCloseMobile?: () => void }) {
                 </div>
                 <div>
                     <h1 className="font-bold text-lg text-white tracking-tight leading-tight">
-                        SSF Division
+                        <span className="font-cooper font-normal tracking-wide text-[22px]">SSF</span> Division
                     </h1>
                     <p className="text-[10px] text-blue-400 font-bold tracking-widest uppercase mt-0.5 opacity-80">Portal</p>
                 </div>
