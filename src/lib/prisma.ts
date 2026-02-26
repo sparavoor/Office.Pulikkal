@@ -1,11 +1,12 @@
 import { PrismaClient } from '@prisma/client'
 
 const prismaClientSingleton = () => {
-    // Check if we are in build time but DATABASE_URL is missing
-    if (typeof window === 'undefined' && !process.env.DATABASE_URL) {
-        console.warn('DATABASE_URL is missing. Deferred Prisma initialization.');
+    try {
+        return new PrismaClient()
+    } catch (e) {
+        console.error('Prisma initialization failed:', e);
+        return {} as PrismaClient; // Return dummy object to prevent top-level crash
     }
-    return new PrismaClient()
 }
 
 declare global {
