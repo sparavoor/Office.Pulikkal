@@ -5,8 +5,6 @@ import { useAppStore, TransactionType, PaymentMode, FinanceRecord } from "@/lib/
 import { Plus, Search, Calendar, Download, Copy, TrendingUp, TrendingDown, DollarSign, Wallet, Edit, Trash2, Tag, FileText, CreditCard, Settings, Printer, X, Lock, ShieldAlert } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { format, isToday, isYesterday, isThisWeek, isThisMonth, isThisYear, parseISO } from "date-fns";
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 
 function ReceiptTemplateModal({ onClose }: { onClose: () => void }) {
     const { receiptTemplate, updateReceiptTemplate } = useAppStore();
@@ -67,8 +65,12 @@ function ReceiptModal({ record, onClose }: { record: FinanceRecord, onClose: () 
         try {
             await new Promise(resolve => setTimeout(resolve, 100));
 
+            const html2canvasModule = await import('html2canvas');
+            const html2canvas = html2canvasModule.default || html2canvasModule;
+            const { jsPDF } = await import('jspdf');
+
             const canvas = await html2canvas(receiptRef.current, {
-                scale: 2, // Standard scale to prevent layout breaking or memory limits
+                scale: 2,
                 useCORS: true,
                 backgroundColor: "#ffffff",
                 logging: false,
@@ -81,8 +83,11 @@ function ReceiptModal({ record, onClose }: { record: FinanceRecord, onClose: () 
             });
 
             const imgData = canvas.toDataURL('image/png');
-            // Basic jsPDF constructor that works reliably across versions
-            const pdf = new jsPDF('l', 'mm', 'a5');
+            const pdf = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: 'a5'
+            });
 
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
@@ -170,7 +175,7 @@ function ReceiptModal({ record, onClose }: { record: FinanceRecord, onClose: () 
                                 <img src="/seal.png" alt="Official Seal" className="w-24 h-24 object-contain" />
                             </div>
 
-                            <div className="text-right w-1/3 relative z-10 bg-white/50 backdrop-blur-[2px] rounded p-1">
+                            <div className="text-right w-1/3 relative z-10 bg-white/80 rounded p-1">
                                 <div className="border-b border-slate-400 mb-1"></div>
                                 <p className="text-xs font-bold text-slate-700">{receiptTemplate.signatureText}</p>
                             </div>
@@ -178,7 +183,7 @@ function ReceiptModal({ record, onClose }: { record: FinanceRecord, onClose: () 
 
                         {/* Background Watermark Seal */}
                         <div className="absolute inset-0 flex items-center justify-center opacity-[0.04] pointer-events-none">
-                            <img src="/seal.png" alt="Watermark Seal" className="w-64 h-64 object-contain grayscale" />
+                            <img src="/seal.png" alt="Watermark Seal" className="w-64 h-64 object-contain" />
                         </div>
                     </div>
                 </div>
