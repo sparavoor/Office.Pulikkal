@@ -2,7 +2,7 @@
 
 import { useState, Suspense, useEffect } from "react";
 import { useAppStore, CommitteeType, Meeting } from "@/lib/store";
-import { Plus, Search, Calendar, Clock, MapPin, Users, ClipboardCheck, Edit, Trash2, CalendarDays, BarChart3 } from "lucide-react";
+import { Plus, Search, Calendar, Clock, MapPin, Users, ClipboardCheck, Edit, Trash2, CalendarDays, BarChart3, Share2 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -23,10 +23,31 @@ function MeetingsContent() {
     const [date, setDate] = useState("");
     const [time, setTime] = useState("");
     const [location, setLocation] = useState("");
-    const [description, setDescription] = useState("");
+    const [agendaItems, setAgendaItems] = useState<string[]>([""]);
+
+    const handleAgendaChange = (index: number, value: string) => {
+        const newItems = [...agendaItems];
+        newItems[index] = value;
+        setAgendaItems(newItems);
+    };
+
+    const addAgendaItem = () => {
+        setAgendaItems([...agendaItems, ""]);
+    };
+
+    const removeAgendaItem = (index: number) => {
+        if (agendaItems.length === 1) {
+            setAgendaItems([""]);
+            return;
+        }
+        const newItems = [...agendaItems];
+        newItems.splice(index, 1);
+        setAgendaItems(newItems);
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        const description = agendaItems.filter(item => item.trim() !== "").map((item, index) => `${index + 1}. ${item.trim()}`).join('\n');
         if (editingId) {
             updateMeeting(editingId, { title, meetingType, date, time, location, description });
         } else {
@@ -41,7 +62,7 @@ function MeetingsContent() {
         setDate("");
         setTime("");
         setLocation("");
-        setDescription("");
+        setAgendaItems([""]);
         setEditingId(null);
         setShowForm(false);
     };
@@ -52,10 +73,17 @@ function MeetingsContent() {
         setDate(meeting.date);
         setTime(meeting.time);
         setLocation(meeting.location);
-        setDescription(meeting.description);
+        const parsedAgendas = meeting.description ? meeting.description.split('\n').map(line => line.replace(/^\d+\.\s*/, '').trim()).filter(Boolean) : [""];
+        setAgendaItems(parsedAgendas.length > 0 ? parsedAgendas : [""]);
         setEditingId(meeting.id);
         setShowForm(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleShareWhatsApp = (meeting: Meeting) => {
+        const text = `*SSF Pulikkal Division - Meeting Scheduled*\n\n*${meeting.title}*\n📝 *Type:* ${meeting.meetingType}\n📅 *Date:* ${format(new Date(meeting.date), "PPP")}\n⏰ *Time:* ${meeting.time}\n📍 *Location:* ${meeting.location}\n\n*Agenda:*\n${meeting.description || 'No specific agenda attached.'}\n\nPlease make sure to attend on time.`;
+        const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+        window.open(url, '_blank');
     };
 
     const sortedMeetings = [...meetings].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -150,8 +178,28 @@ function MeetingsContent() {
                                 </div>
 
                                 <div className="md:col-span-2">
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
-                                    <textarea required value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" placeholder="Agenda and notes..." />
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Agenda</label>
+                                    <div className="space-y-2">
+                                        {agendaItems.map((item, index) => (
+                                            <div key={index} className="flex items-center gap-2">
+                                                <span className="text-sm font-bold text-slate-400 w-6 text-right">{index + 1}.</span>
+                                                <input
+                                                    type="text"
+                                                    value={item}
+                                                    onChange={(e) => handleAgendaChange(index, e.target.value)}
+                                                    className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                                                    placeholder="Agenda item..."
+                                                    required={index === 0 && agendaItems.length === 1}
+                                                />
+                                                <button type="button" onClick={() => removeAgendaItem(index)} className="p-2 text-slate-400 hover:text-red-500 transition-colors bg-white rounded-lg border border-slate-200 hover:bg-red-50">
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        <button type="button" onClick={addAgendaItem} className="text-sm font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 mt-1 pl-8 pb-2">
+                                            <Plus className="w-4 h-4" /> Add Agenda Item
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="md:col-span-2 mt-4">
@@ -173,7 +221,10 @@ function MeetingsContent() {
                                     </div>
 
                                     <h3 className="text-lg font-bold text-slate-800 mt-2 mb-1 pr-16 leading-tight">{meeting.title}</h3>
-                                    <p className="text-slate-500 text-sm line-clamp-2 mb-4 flex-1">{meeting.description}</p>
+                                    <div className="mb-4 flex-1">
+                                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Agenda</p>
+                                        <p className="text-slate-600 text-sm whitespace-pre-wrap line-clamp-3">{meeting.description}</p>
+                                    </div>
 
                                     <div className="space-y-2 mb-6">
                                         <div className="flex items-center text-sm text-slate-600 gap-2">
@@ -191,12 +242,15 @@ function MeetingsContent() {
 
                                     <div className="pt-4 border-t border-slate-100 mt-auto flex justify-between items-center gap-2">
                                         <div className="flex gap-1.5">
-                                            <button onClick={() => handleEdit(meeting)} className="w-9 h-9 flex justify-center items-center rounded-lg border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-colors tooltip-trigger relative">
+                                            <button onClick={() => handleEdit(meeting)} className="w-9 h-9 flex justify-center items-center rounded-lg border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-colors tooltip-trigger relative" title="Edit Meeting">
                                                 <Edit className="w-4 h-4" />
+                                            </button>
+                                            <button onClick={() => handleShareWhatsApp(meeting)} className="w-9 h-9 flex justify-center items-center rounded-lg border border-slate-200 text-slate-500 hover:text-green-600 hover:border-green-200 hover:bg-green-50 transition-colors tooltip-trigger relative" title="Share on WhatsApp">
+                                                <Share2 className="w-4 h-4" />
                                             </button>
                                             <button onClick={() => {
                                                 if (confirm('Are you sure you want to delete this meeting? All associated attendance records will also be deleted.')) deleteMeeting(meeting.id);
-                                            }} className="w-9 h-9 flex justify-center items-center rounded-lg border border-slate-200 text-slate-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-colors">
+                                            }} className="w-9 h-9 flex justify-center items-center rounded-lg border border-slate-200 text-slate-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-colors" title="Delete Meeting">
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
                                         </div>
