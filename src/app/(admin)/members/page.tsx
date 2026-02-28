@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAppStore, CommitteeType, Member } from "@/lib/store";
-import { Plus, Search, Trash2, Edit } from "lucide-react";
+import { Plus, Search, Trash2, Edit, Copy } from "lucide-react";
 
 export default function MembersPage() {
     const { members, addMember, updateMember, deleteMember } = useAppStore();
@@ -114,9 +114,27 @@ export default function MembersPage() {
                             </button>
                         ))}
                     </div>
-                    <div className="relative w-full sm:w-64 px-2 sm:px-4 mb-2 sm:mb-0">
-                        <Search className="w-4 h-4 text-slate-400 absolute left-5 sm:left-7 top-3" />
-                        <input type="text" placeholder="Search members..." className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" />
+                    <div className="flex items-center gap-2 w-full sm:w-auto px-2 sm:px-4 mb-2 sm:mb-0">
+                        <div className="relative flex-1 sm:w-64">
+                            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                            <input type="text" placeholder="Search members..." className="w-full pl-9 pr-4 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" />
+                        </div>
+                        <button
+                            onClick={async () => {
+                                const numbers = filteredMembers.map(m => m.mobile).filter(Boolean).join(', ');
+                                if (!numbers) return;
+                                try {
+                                    await navigator.clipboard.writeText(numbers);
+                                    alert(`Copied ${filteredMembers.length} numbers to clipboard!`);
+                                } catch (err) {
+                                    console.error('Failed to copy: ', err);
+                                }
+                            }}
+                            className="bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 px-3 py-1.5 rounded-md flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-colors shadow-sm"
+                            title="Copy all currently listed numbers"
+                        >
+                            <Copy className="w-4 h-4" /> Copy Numbers
+                        </button>
                     </div>
                 </div>
 
