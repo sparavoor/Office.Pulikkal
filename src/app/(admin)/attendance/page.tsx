@@ -3,7 +3,7 @@
 import { useState, Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAppStore, AttendanceStatus } from "@/lib/store";
-import { Check, X, Clock, Save, Building2, Calendar as CalendarIcon, Activity, Phone } from "lucide-react";
+import { Check, X, Clock, Save, Building2, Calendar as CalendarIcon, Activity, Phone, Send } from "lucide-react";
 import { format } from "date-fns";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -64,6 +64,38 @@ function AttendanceContent() {
         toast.success('Attendance saved successfully!');
     };
 
+    const [isBroadcasting, setIsBroadcasting] = useState(false);
+
+    const handleBroadcast = async () => {
+        if (!selectedMeeting) return;
+        if (!confirm('Are you sure you want to broadcast the meeting reminder via WhatsApp API to all eligible members?')) return;
+
+        setIsBroadcasting(true);
+        const toastId = toast.loading('Sending broadcast messages...');
+
+        try {
+            const response = await fetch('/api/whatsapp/broadcast', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ members: eligibleMembers })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                toast.success('Broadcast sent successfully!', { id: toastId });
+            } else {
+                toast.error(data.message || 'Failed to send broadcast to some/all members.', { id: toastId });
+                console.error('Broadcast details:', data.details);
+            }
+        } catch (error) {
+            console.error('Broadcast Error:', error);
+            toast.error('Failed to send broadcast due to an error.', { id: toastId });
+        } finally {
+            setIsBroadcasting(false);
+        }
+    };
+
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <Toaster position="top-right" />
@@ -121,12 +153,22 @@ function AttendanceContent() {
                             <Activity className="w-4 h-4 text-slate-500" />
                             Eligible Members ({eligibleMembers.length})
                         </h2>
-                        <button
-                            onClick={handleSave}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 transition-all shadow-md shadow-blue-500/20 active:scale-95"
-                        >
-                            <Save className="w-4 h-4" /> Save Attendance
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={handleBroadcast}
+                                disabled={isBroadcasting}
+                                className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 transition-all shadow-md shadow-green-500/20 active:scale-95"
+                            >
+                                <Send className="w-4 h-4" />
+                                {isBroadcasting ? 'Sending...' : 'Broadcast via API'}
+                            </button>
+                            <button
+                                onClick={handleSave}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 transition-all shadow-md shadow-blue-500/20 active:scale-95"
+                            >
+                                <Save className="w-4 h-4" /> Save Attendance
+                            </button>
+                        </div>
                     </div>
 
                     {eligibleMembers.length > 0 ? (
