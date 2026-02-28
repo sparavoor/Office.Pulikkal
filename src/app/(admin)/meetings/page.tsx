@@ -81,7 +81,7 @@ function MeetingsContent() {
     };
 
     const handleShareWhatsApp = (meeting: Meeting) => {
-        const text = `*SSF Pulikkal Division - Meeting Scheduled*\n\n*${meeting.title}*\n📝 *Type:* ${meeting.meetingType}\n📅 *Date:* ${format(new Date(meeting.date), "PPP")}\n⏰ *Time:* ${meeting.time}\n📍 *Location:* ${meeting.location}\n\n*Agenda:*\n${meeting.description || 'No specific agenda attached.'}\n\nPlease make sure to attend on time.`;
+        const text = `*${meeting.title}*\n📝 *Type:* ${meeting.meetingType}\n📅 *Date:* ${format(new Date(meeting.date), "PPP")}\n⏰ *Time:* ${meeting.time}\n📍 *Location:* ${meeting.location}\n\n*Agenda:*\n${meeting.description || 'No specific agenda attached.'}\n\nPlease make sure to attend on time.`;
         const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
         window.open(url, '_blank');
     };
