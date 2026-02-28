@@ -3,7 +3,7 @@
 import { useState, Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAppStore, AttendanceStatus } from "@/lib/store";
-import { Check, X, Clock, Save, Building2, Calendar as CalendarIcon, Activity } from "lucide-react";
+import { Check, X, Clock, Save, Building2, Calendar as CalendarIcon, Activity, Phone } from "lucide-react";
 import { format } from "date-fns";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -145,7 +145,20 @@ function AttendanceContent() {
                                             <tr key={member.id} className="hover:bg-slate-50/50 transition-colors">
                                                 <td className="px-4 md:px-6 py-4">
                                                     <div className="font-bold text-slate-900">{member.name}</div>
-                                                    <div className="text-xs text-slate-500 mt-1">{member.designation} • {member.mobile}</div>
+                                                    <div className="text-xs text-slate-500 mt-1 flex items-center gap-2">
+                                                        <span>{member.designation}</span>
+                                                        <span>•</span>
+                                                        <span>{member.mobile}</span>
+                                                        <a
+                                                            href={`https://wa.me/${member.mobile.replace(/\D/g, '')}?text=${encodeURIComponent(`*Reminder: ${selectedMeeting.title}*\n📅 Date: ${format(new Date(selectedMeeting.date), "PPP")}\n⏰ Time: ${selectedMeeting.time}\n📍 Location: ${selectedMeeting.location}\n\nPlease let us know your availability.`)}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-green-600 hover:text-green-700 hover:bg-green-50 p-1 rounded transition-colors inline-block"
+                                                            title="Message on WhatsApp"
+                                                        >
+                                                            <Phone className="w-3.5 h-3.5" />
+                                                        </a>
+                                                    </div>
                                                 </td>
                                                 <td className="px-4 md:px-6 py-4">
                                                     <div className="flex flex-col sm:flex-row justify-center gap-2">
