@@ -16,10 +16,19 @@ export async function POST(request: Request) {
 
         const results = [];
 
-        // Format date
+        // Format date and agenda
         const meetingDate = new Date(meeting.date).toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
-        const agenda = meeting.description ? `\n\n*Agenda:*\n${meeting.description}` : '';
-        const messageText = `*Reminder: ${meeting.title}*\n📅 Date: ${meetingDate}\n⏰ Time: ${meeting.time}\n📍 Location: ${meeting.location}${agenda}\n\nPlease let us know your availability.`;
+
+        let agendaText = "";
+        if (meeting.description) {
+            // Split by newline, filter empty, and join with double newlines
+            const agendaItems = meeting.description.split('\n').filter((item: string) => item.trim() !== '');
+            if (agendaItems.length > 0) {
+                agendaText = `\n\nAgenda:\n\n${agendaItems.join('\n\n')}`;
+            }
+        }
+
+        const messageText = `*${meeting.title}*\n📝 Type: ${meeting.meetingType}\n📅 Date: ${meetingDate}\n⏰ Time: ${meeting.time}\n📍 Location: ${meeting.location}${agendaText}`;
 
         // Broadcast to all members
         for (const member of members) {
