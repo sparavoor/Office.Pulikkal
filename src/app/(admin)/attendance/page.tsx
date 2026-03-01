@@ -3,7 +3,7 @@
 import { useState, Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAppStore, AttendanceStatus } from "@/lib/store";
-import { Check, X, Clock, Save, Building2, Calendar as CalendarIcon, Activity, Phone, Send } from "lucide-react";
+import { Check, X, Clock, Save, Building2, Calendar as CalendarIcon, Activity, Phone, Send, Search } from "lucide-react";
 import { format } from "date-fns";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -17,16 +17,32 @@ function AttendanceContent() {
     // Local state for tracking attendance checks before saving
     const [currentAttendance, setCurrentAttendance] = useState<Record<string, AttendanceStatus>>({});
 
+    // Search states
+    const [meetingSearchQuery, setMeetingSearchQuery] = useState("");
+    const [memberSearchQuery, setMemberSearchQuery] = useState("");
+
     const selectedMeeting = meetings.find(m => m.id === selectedMeetingId);
 
+    // Filter meetings based on search
+    const filteredMeetings = meetings.filter(m =>
+        m.title.toLowerCase().includes(meetingSearchQuery.toLowerCase()) ||
+        m.meetingType.toLowerCase().includes(meetingSearchQuery.toLowerCase())
+    );
+
     // Filter members based on meeting type eligible for this meeting
-    const eligibleMembers = selectedMeeting
+    const baseEligibleMembers = selectedMeeting
         ? members.filter(m =>
             selectedMeeting.meetingType === 'Executive'
                 ? true // Secretariat members are Executive members too, so include everyone
                 : m.committeeType === 'Secretariat' // Only Secretariat can attend Secretariat meetings
         )
         : [];
+
+    const eligibleMembers = baseEligibleMembers.filter(m =>
+        m.name.toLowerCase().includes(memberSearchQuery.toLowerCase()) ||
+        m.mobile.includes(memberSearchQuery) ||
+        m.designation.toLowerCase().includes(memberSearchQuery.toLowerCase())
+    );
 
     // Load existing records when meeting changes
     useEffect(() => {
@@ -37,7 +53,7 @@ function AttendanceContent() {
                 attendanceMap[r.memberId] = r.status;
             });
             // Pre-fill missing with Absent by default
-            eligibleMembers.forEach(m => {
+            baseEligibleMembers.forEach(m => {
                 if (!attendanceMap[m.id]) attendanceMap[m.id] = 'Absent';
             });
             setCurrentAttendance(attendanceMap);
@@ -105,14 +121,26 @@ function AttendanceContent() {
             </div>
 
             <div className="mb-8">
-                <h2 className="text-sm font-bold tracking-widest text-slate-500 uppercase mb-4">Select Scheduled Meeting</h2>
-                {meetings.length === 0 ? (
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                    <h2 className="text-sm font-bold tracking-widest text-slate-500 uppercase">Select Scheduled Meeting</h2>
+                    <div className="relative w-full sm:w-64">
+                        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                        <input
+                            type="text"
+                            placeholder="Search meetings..."
+                            value={meetingSearchQuery}
+                            onChange={(e) => setMeetingSearchQuery(e.target.value)}
+                            className="w-full pl-9 pr-4 py-1.5 bg-white border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none shadow-sm transition-all"
+                        />
+                    </div>
+                </div>
+                {filteredMeetings.length === 0 ? (
                     <div className="text-center py-10 bg-white rounded-2xl border border-slate-200 shadow-sm">
                         <p className="text-slate-500 font-medium">No meetings scheduled yet.</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {meetings.map(m => {
+                        {filteredMeetings.map(m => {
                             const isSelected = selectedMeetingId === m.id;
                             return (
                                 <button
@@ -148,26 +176,40 @@ function AttendanceContent() {
 
             {selectedMeeting && (
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in">
-                    <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-                        <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wide">
-                            <Activity className="w-4 h-4 text-slate-500" />
-                            Eligible Members ({eligibleMembers.length})
-                        </h2>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={handleBroadcast}
-                                disabled={isBroadcasting}
-                                className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 transition-all shadow-md shadow-green-500/20 active:scale-95"
-                            >
-                                <Send className="w-4 h-4" />
-                                {isBroadcasting ? 'Sending...' : 'Broadcast via API'}
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 transition-all shadow-md shadow-blue-500/20 active:scale-95"
-                            >
-                                <Save className="w-4 h-4" /> Save Attendance
-                            </button>
+                    <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div className="flex items-center gap-4 w-full sm:w-auto">
+                            <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wide whitespace-nowrap">
+                                <Activity className="w-4 h-4 text-slate-500" />
+                                Eligible Members ({baseEligibleMembers.length})
+                            </h2>
+                        </div>
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                            <div className="relative w-full sm:w-64">
+                                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                                <input
+                                    type="text"
+                                    placeholder="Search members..."
+                                    value={memberSearchQuery}
+                                    onChange={(e) => setMemberSearchQuery(e.target.value)}
+                                    className="w-full pl-9 pr-4 py-1.5 bg-white border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none shadow-sm transition-all"
+                                />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={handleBroadcast}
+                                    disabled={isBroadcasting}
+                                    className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 transition-all shadow-md shadow-green-500/20 active:scale-95"
+                                >
+                                    <Send className="w-4 h-4" />
+                                    {isBroadcasting ? 'Sending...' : 'Broadcast via API'}
+                                </button>
+                                <button
+                                    onClick={handleSave}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 transition-all shadow-md shadow-blue-500/20 active:scale-95"
+                                >
+                                    <Save className="w-4 h-4" /> Save Attendance
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -232,7 +274,7 @@ function AttendanceContent() {
                         </div>
                     ) : (
                         <div className="p-8 text-center text-slate-500 font-medium">
-                            No eligible members found for {selectedMeeting.meetingType} committee.
+                            No eligible members found matching your search.
                         </div>
                     )}
                 </div>
