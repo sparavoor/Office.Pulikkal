@@ -81,7 +81,8 @@ function MeetingsContent() {
     };
 
     const handleShareWhatsApp = (meeting: Meeting) => {
-        const text = `*${meeting.title}*\n📝 *Type:* ${meeting.meetingType}\n📅 *Date:* ${format(new Date(meeting.date), "PPP")}\n⏰ *Time:* ${meeting.time}\n📍 *Location:* ${meeting.location}\n\n*Agenda:*\n${meeting.description || 'No specific agenda attached.'}\n\nPlease make sure to attend on time.`;
+        const agendaText = meeting.description ? `\n\nAgenda:\n\n${meeting.description.split('\n').filter(i => i.trim() !== '').join('\n\n')}` : '';
+        const text = `*${meeting.title}*\n📝 Type: ${meeting.meetingType}\n📅 Date: ${format(new Date(meeting.date), "PPP")}\n⏰ Time: ${meeting.time}\n📍 Location: ${meeting.location}${agendaText}`;
         const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
         window.open(url, '_blank');
     };
