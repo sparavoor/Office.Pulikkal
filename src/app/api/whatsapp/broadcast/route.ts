@@ -2,20 +2,24 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
     try {
-        const { members } = await request.json();
+        const { members, meeting } = await request.json();
 
-        if (!members || !Array.isArray(members)) {
-            return NextResponse.json({ error: 'Invalid members data' }, { status: 400 });
+        if (!members || !Array.isArray(members) || !meeting) {
+            return NextResponse.json({ error: 'Invalid data provided' }, { status: 400 });
         }
 
-        const token = process.env.WHATSAPP_TOKEN;
-        const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+        const token = process.env.WHAPI_TOKEN;
 
-        if (!token || !phoneId) {
-            return NextResponse.json({ error: 'WhatsApp API credentials not configured' }, { status: 500 });
+        if (!token) {
+            return NextResponse.json({ error: 'Whapi.Cloud API credentials not configured' }, { status: 500 });
         }
 
         const results = [];
+
+        // Format date
+        const meetingDate = new Date(meeting.date).toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
+        const agenda = meeting.description ? `\n\n*Agenda:*\n${meeting.description}` : '';
+        const messageText = `*Reminder: ${meeting.title}*\n📅 Date: ${meetingDate}\n⏰ Time: ${meeting.time}\n📍 Location: ${meeting.location}${agenda}\n\nPlease let us know your availability.`;
 
         // Broadcast to all members
         for (const member of members) {
@@ -27,23 +31,17 @@ export async function POST(request: Request) {
             }
 
             try {
-                const response = await fetch(`https://graph.facebook.com/v19.0/${phoneId}/messages`, {
+                const response = await fetch(`https://gate.whapi.cloud/messages/text`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
                     body: JSON.stringify({
-                        messaging_product: 'whatsapp',
-                        to: cleanNumber,
-                        type: 'template',
-                        template: {
-                            name: 'meeting_reminder',
-                            language: {
-                                code: 'en_US' // Adjust if template is in different language, e.g., en, ml
-                            }
-                            // Note: If your template has variables (like {{1}}), you would pass a 'components' array here.
-                        }
+                        typing_time: 0,
+                        to: `${cleanNumber}@s.whatsapp.net`,
+                        body: messageText
                     })
                 });
 

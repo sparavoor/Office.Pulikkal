@@ -93,7 +93,7 @@ function AttendanceContent() {
             const response = await fetch('/api/whatsapp/broadcast', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ members: eligibleMembers })
+                body: JSON.stringify({ members: eligibleMembers, meeting: selectedMeeting })
             });
 
             const data = await response.json();
